@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ApiService } from '../../services/api.service';
+import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Component({
     selector: 'app-test-engine',
@@ -12,64 +13,109 @@ import { interval, Subscription } from 'rxjs';
     styleUrls: ['./test-engine.component.css']
 })
 export class TestEngineComponent implements OnInit, OnDestroy {
-    attemptId: string | null = null;
-    attempt: any;
+    attemptId: string = '';
+    testId: string = '';
+    link: string = '';
     currentQuestionIndex = 0;
-    timeLeft = 0; // seconds
+    timeLeft = 0;
     timerSubscription: Subscription | null = null;
     autoSaveSubscription: Subscription | null = null;
 
+    testTitle = '';
     questions: any[] = [];
-    answers: any[] = [];
+    answers: { [key: string]: number } = {};
+    questionTimes: { [key: string]: number } = {}; // seconds spent per question
+    questionStartTime: number = Date.now();
 
-    isFullScreen = false;
     warnings = 0;
+    tabSwitchCount = 0;
+    showTabWarning = false;
 
-    constructor(private route: ActivatedRoute, private router: Router, private api: ApiService) {
-        const nav = this.router.getCurrentNavigation();
-        if (nav?.extras.state) {
-            this.attemptId = nav.extras.state['attemptId'];
-        }
+    private apiUrl = environment.apiUrl;
+
+    get currentQuestion() {
+        return this.questions[this.currentQuestionIndex];
     }
 
+    get timeRemaining() {
+        return this.timeLeft;
+    }
+
+    constructor(
+        private route: ActivatedRoute,
+        private router: Router,
+        private http: HttpClient
+    ) { }
+
     ngOnInit() {
-        // If no attemptId in state, try to recover active attempt or error
+        this.link = this.route.snapshot.paramMap.get('link') || '';
+        this.attemptId = this.route.snapshot.queryParamMap.get('attemptId') || '';
+
         if (!this.attemptId) {
-            // Fallback: This is tricky if user refreshes. 
-            // We really need to persist attemptId in localStorage or fetch "current active attempt" from backend.
-            // For now, let's assume valid flow.
-            alert("Invalid Session. Please start again from dashboard.");
-            this.router.navigate(['/student']);
+            alert('Invalid session. Please start again.');
+            this.router.navigate(['/test', this.link]);
             return;
         }
 
-        this.loadAttempt();
-        this.enterFullScreen();
+        this.loadAttemptAndQuestions();
 
-        // Auto save every 10 seconds
         this.autoSaveSubscription = interval(10000).subscribe(() => {
             this.saveProgress();
         });
     }
 
-    loadAttempt() {
-        this.api.get(`attempts/${this.attemptId}`).subscribe({
-            next: (data) => {
-                this.attempt = data;
-                this.questions = this.attempt.test.questions; // populated? No, getAttempt populates test but maybe not questions deep?
-                // backend getAttempt populates 'test'. 'test' has 'questions' array of IDs.
-                // I need the actual question text.
-                // Backend `getAttempt` -> populate('test') -> Test model has `questions` ref.
-                // I need to deep populate `test.questions` in backend `getAttempt`.
+    loadAttemptAndQuestions() {
+        // First get the attempt to find testId and start time
+        this.http.get(`${this.apiUrl}/attempts/${this.attemptId}`).subscribe({
+            next: (attempt: any) => {
+                this.testId = attempt.test?._id || attempt.test;
+                const startTime = new Date(attempt.startTime).getTime();
 
-                // Assuming I fix backend or have data:
-                // Let's Init answers map
+                // Restore existing answers if any
+                if (attempt.answers && Array.isArray(attempt.answers)) {
+                    attempt.answers.forEach((ans: any) => {
+                        if (ans.timeSpent) {
+                            this.questionTimes[ans.questionId] = ans.timeSpent;
+                        }
+                    });
+                }
+                if (attempt.tabSwitchCount) {
+                    this.tabSwitchCount = attempt.tabSwitchCount;
+                    this.warnings = attempt.tabSwitchCount;
+                }
 
-                // Calculate time left
-                const elapsed = Math.floor((Date.now() - new Date(this.attempt.startTime).getTime()) / 1000);
-                this.timeLeft = (this.attempt.test.duration * 60) - elapsed;
+                // Now load questions
+                this.http.get(`${this.apiUrl}/tests/${this.testId}/questions`).subscribe({
+                    next: (data: any) => {
+                        this.testTitle = data.title;
+                        this.questions = data.questions;
+                        this.timeLeft = Math.max(0, (data.duration * 60) - Math.floor((Date.now() - startTime) / 1000));
 
-                this.startTimer();
+                        // Restore existing answers
+                        if (attempt.answers && Array.isArray(attempt.answers)) {
+                            attempt.answers.forEach((ans: any) => {
+                                const q = this.questions.find(q => q._id === ans.questionId);
+                                if (q && q.options && ans.selectedOption) {
+                                    const idx = q.options.indexOf(ans.selectedOption);
+                                    if (idx !== -1) {
+                                        this.answers[ans.questionId] = idx;
+                                    }
+                                }
+                            });
+                        }
+
+                        this.questionStartTime = Date.now();
+                        this.startTimer();
+                    },
+                    error: () => {
+                        alert('Failed to load questions.');
+                        this.router.navigate(['/test', this.link]);
+                    }
+                });
+            },
+            error: () => {
+                alert('Failed to load attempt.');
+                this.router.navigate(['/test', this.link]);
             }
         });
     }
@@ -79,35 +125,49 @@ export class TestEngineComponent implements OnInit, OnDestroy {
             if (this.timeLeft > 0) {
                 this.timeLeft--;
             } else {
-                this.submitTest();
+                this.autoSubmit();
             }
         });
     }
 
-    selectOption(option: string) {
-        const qId = this.questions[this.currentQuestionIndex]._id;
-        const existing = this.answers.find(a => a.questionId === qId);
-        if (existing) {
-            existing.selectedOption = option;
-        } else {
-            this.answers.push({ questionId: qId, selectedOption: option });
+    formatTime(seconds: number): string {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
+    }
+
+    trackQuestionTime() {
+        if (this.currentQuestion) {
+            const qId = this.currentQuestion._id;
+            const elapsed = Math.round((Date.now() - this.questionStartTime) / 1000);
+            this.questionTimes[qId] = (this.questionTimes[qId] || 0) + elapsed;
+        }
+        this.questionStartTime = Date.now();
+    }
+
+    selectOption(index: number) {
+        if (this.currentQuestion) {
+            this.answers[this.currentQuestion._id] = index;
         }
     }
 
-    getSelectedOption(index?: number): string | null {
-        const targetIndex = index !== undefined ? index : this.currentQuestionIndex;
-        const qId = this.questions[targetIndex]?._id;
-        const ans = this.answers.find(a => a.questionId === qId);
-        return ans ? ans.selectedOption : null;
+    getSelectedOption(): number | null {
+        if (this.currentQuestion) {
+            return this.answers[this.currentQuestion._id] !== undefined
+                ? this.answers[this.currentQuestion._id] : null;
+        }
+        return null;
     }
 
     nextQuestion() {
+        this.trackQuestionTime();
         if (this.currentQuestionIndex < this.questions.length - 1) {
             this.currentQuestionIndex++;
         }
     }
 
     prevQuestion() {
+        this.trackQuestionTime();
         if (this.currentQuestionIndex > 0) {
             this.currentQuestionIndex--;
         }
@@ -115,27 +175,65 @@ export class TestEngineComponent implements OnInit, OnDestroy {
 
     saveProgress() {
         if (this.attemptId) {
-            this.api.put(`attempts/${this.attemptId}/save`, { answers: this.answers }).subscribe();
+            this.trackQuestionTime();
+            const formattedAnswers = this.formatAnswers();
+            this.http.put(`${this.apiUrl}/attempts/${this.attemptId}/save`, {
+                answers: formattedAnswers,
+                tabSwitchCount: this.tabSwitchCount
+            }).subscribe();
+            this.questionStartTime = Date.now(); // Reset after save
         }
     }
 
+    private formatAnswers() {
+        return Object.keys(this.answers).map(qId => {
+            const q = this.questions.find(fq => fq._id === qId);
+            return {
+                questionId: qId,
+                selectedOption: q ? q.options[this.answers[qId]] : null,
+                timeSpent: this.questionTimes[qId] || 0
+            };
+        });
+    }
+
     submitTest() {
-        if (confirm("Are you sure you want to submit?")) {
-            this.api.post(`attempts/${this.attemptId}/submit`, { answers: this.answers }).subscribe({
-                next: () => {
-                    this.router.navigate([`/result/${this.attemptId}`]);
-                }
-            });
+        if (confirm('Are you sure you want to submit?')) {
+            this.doSubmit();
         }
+    }
+
+    autoSubmit() {
+        this.doSubmit();
+    }
+
+    private doSubmit() {
+        this.trackQuestionTime();
+        this.timerSubscription?.unsubscribe();
+        this.autoSaveSubscription?.unsubscribe();
+
+        const formattedAnswers = this.formatAnswers();
+        this.http.post(`${this.apiUrl}/attempts/${this.attemptId}/submit`, {
+            answers: formattedAnswers,
+            tabSwitchCount: this.tabSwitchCount
+        }).subscribe({
+            next: () => {
+                this.router.navigate(['/result', this.attemptId]);
+            },
+            error: () => {
+                alert('Submission failed. Please try again.');
+            }
+        });
     }
 
     @HostListener('document:visibilitychange')
     visibilityChange() {
         if (document.hidden) {
             this.warnings++;
-            alert(`Warning: Tab switching is monitored. Warning ${this.warnings}/3.`);
+            this.tabSwitchCount++;
+            this.showTabWarning = true;
+            setTimeout(() => this.showTabWarning = false, 5000);
             if (this.warnings >= 3) {
-                this.submitTest(); // Force submit
+                this.autoSubmit();
             }
         }
     }
@@ -145,22 +243,8 @@ export class TestEngineComponent implements OnInit, OnDestroy {
         event.preventDefault();
     }
 
-    enterFullScreen() {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen();
-            this.isFullScreen = true;
-        }
-    }
-
     ngOnDestroy() {
         this.timerSubscription?.unsubscribe();
         this.autoSaveSubscription?.unsubscribe();
-    }
-
-    get formattedTime() {
-        const minutes = Math.floor(this.timeLeft / 60);
-        const seconds = this.timeLeft % 60;
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     }
 }

@@ -7,15 +7,29 @@ const questionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['MCQ', 'True/False'],
-        required: true
+        enum: ['MCQ', 'True/False', 'multiple_choice'],
+        required: true,
+        set: function (val) {
+            // Normalize type values
+            if (val === 'multiple_choice' || val === 'mcq') return 'MCQ';
+            if (val === 'true_false' || val === 'true/false') return 'True/False';
+            return val;
+        }
     },
     options: [{
         type: String
     }],
     correctAnswer: {
-        type: String, // Store the correct option index or text
+        type: String,
         required: true
+    },
+    difficulty: {
+        type: String,
+        enum: ['easy', 'medium', 'hard'],
+        default: 'medium',
+        set: function (val) {
+            return val ? val.toLowerCase() : 'medium';
+        }
     },
     category: {
         type: String,

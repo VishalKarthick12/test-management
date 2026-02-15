@@ -2,19 +2,25 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AuthService {
-    private apiUrl = 'http://localhost:5000/api/auth';
+    private apiUrl = `${environment.apiUrl}/auth`;
     private currentUserSubject = new BehaviorSubject<any>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
 
     constructor(private http: HttpClient, private router: Router) {
         const user = localStorage.getItem('user');
         if (user) {
-            this.currentUserSubject.next(JSON.parse(user));
+            try {
+                this.currentUserSubject.next(JSON.parse(user));
+            } catch (e) {
+                console.error('Failed to parse user from local storage', e);
+                localStorage.removeItem('user');
+            }
         }
     }
 

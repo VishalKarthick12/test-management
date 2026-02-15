@@ -1,7 +1,9 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, Inject, PLATFORM_ID, OnInit, OnDestroy } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-cursor',
+  standalone: true,
   template: `
     <div class="cursor-dot" [style.left.px]="cursorX" [style.top.px]="cursorY"></div>
     <div class="cursor-outline" [style.left.px]="outlineX" [style.top.px]="outlineY"></div>
@@ -30,29 +32,47 @@ import { Component, HostListener, OnInit } from '@angular/core';
     }
   `]
 })
-export class CursorComponent implements OnInit {
+export class CursorComponent implements OnInit, OnDestroy {
   cursorX = 0;
   cursorY = 0;
   outlineX = 0;
   outlineY = 0;
+  private animationId: number | null = null;
+  private isBrowser: boolean;
+
+  constructor(@Inject(PLATFORM_ID) platformId: Object) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit() {
-    this.animate();
+    if (this.isBrowser) {
+      this.animate();
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+    }
   }
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(e: MouseEvent) {
-    this.cursorX = e.clientX;
-    this.cursorY = e.clientY;
+    if (this.isBrowser) {
+      this.cursorX = e.clientX;
+      this.cursorY = e.clientY;
+    }
   }
 
   animate() {
+    if (!this.isBrowser) return;
+
     const distX = this.cursorX - this.outlineX;
     const distY = this.cursorY - this.outlineY;
 
     this.outlineX += distX * 0.15;
     this.outlineY += distY * 0.15;
 
-    requestAnimationFrame(() => this.animate());
+    this.animationId = requestAnimationFrame(() => this.animate());
   }
 }

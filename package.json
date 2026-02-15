@@ -1,0 +1,17 @@
+{
+    "name": "ltts-test-portal",
+    "version": "1.0.0",
+    "description": "Full-stack Test Portal for LTTS",
+    "scripts": {
+        "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+        "dev": "concurrently \"npm run server\" \"npm run client\"",
+        "server": "cd server && npm run dev",
+        "client": "cd client && ng serve --port 4200",
+        "build": "cd client && ng build",
+        "start": "node server/server.js"
+    },
+    "dependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "devDependencies": {}
+}

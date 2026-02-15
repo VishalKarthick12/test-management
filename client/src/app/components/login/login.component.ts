@@ -17,36 +17,31 @@ export class LoginComponent {
     error = '';
     isLoading = false;
 
-    constructor(private authService: AuthService, private router: Router) { }
-
-    validateEmail() {
-        if (this.email && !this.email.endsWith('@ltts.com')) {
-            // Don't show error immediately while typing, maybe on blur or submit
-            // But for visual feedback we can check
+    constructor(private authService: AuthService, private router: Router) {
+        // If already logged in, redirect to admin
+        const user = this.authService.getUser();
+        if (user && user.role === 'admin') {
+            this.router.navigate(['/admin']);
         }
     }
 
     onSubmit() {
         this.error = '';
-
-        if (!this.email.endsWith('@ltts.com')) {
-            this.error = 'Email must be an @ltts.com address';
-            return;
-        }
-
         this.isLoading = true;
+
         this.authService.login({ email: this.email, password: this.password }).subscribe({
             next: (user) => {
                 this.isLoading = false;
                 if (user.role === 'admin') {
                     this.router.navigate(['/admin']);
                 } else {
-                    this.router.navigate(['/student']);
+                    this.error = 'Only admin accounts can log in here.';
+                    this.authService.logout();
                 }
             },
             error: (err) => {
                 this.isLoading = false;
-                this.error = err.error?.message || 'Login failed';
+                this.error = err.error?.message || 'Invalid credentials';
             }
         });
     }

@@ -13,8 +13,8 @@ import { Router } from '@angular/router';
 })
 export class StudentDashboardComponent implements OnInit {
     user: any;
-    testLinkInput = '';
-
+    testLink: string = '';
+    attempts: any[] = [];
     constructor(private auth: AuthService, private api: ApiService, private router: Router) {
         this.user = this.auth.getUser();
     }
@@ -22,9 +22,9 @@ export class StudentDashboardComponent implements OnInit {
     ngOnInit() {
     }
 
-    goToTest() {
-        if (this.testLinkInput) {
-            this.router.navigate([`/test/${this.testLinkInput}`]);
+    navigateToTest() {
+        if (this.testLink) {
+            this.router.navigate(['/test', this.testLink]);
         }
     }
 

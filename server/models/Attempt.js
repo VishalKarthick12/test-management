@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 
 const attemptSchema = new mongoose.Schema({
-    student: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+    studentName: {
+        type: String,
+        required: true
+    },
+    studentEmail: {
+        type: String,
         required: true
     },
     test: {
@@ -29,8 +32,16 @@ const attemptSchema = new mongoose.Schema({
         },
         isCorrect: {
             type: Boolean
+        },
+        timeSpent: {
+            type: Number, // seconds spent on this question
+            default: 0
         }
     }],
+    tabSwitchCount: {
+        type: Number,
+        default: 0
+    },
     startTime: {
         type: Date,
         default: Date.now
@@ -43,7 +54,7 @@ const attemptSchema = new mongoose.Schema({
         default: false
     },
     timeTaken: {
-        type: Number // in seconds
+        type: Number // total seconds
     }
 });
 

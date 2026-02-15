@@ -1,83 +1,216 @@
-<div class="min-h-screen bg-gray-50 py-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="md:flex md:items-center md:justify-between mb-8">
-            <div class="flex-1 min-w-0">
-                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                    Question Bank Upload
-                </h2>
+<div class="page-wrapper py-12 px-4" style="min-height:100vh;">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container relative z-10">
+        <!-- Header -->
+        <div class="flex-between mb-10 flex-wrap gap-4">
+            <div>
+                <h2 class="text-3xl font-bold gradient-text" style="display:inline-block;">Question Bank</h2>
+                <p class="text-mid mt-2">Upload, manage, and delete questions.</p>
             </div>
+            <a routerLink="/admin" class="btn btn-ghost">← Back to Dashboard</a>
         </div>
 
-        <div class="bg-white shadow sm:rounded-lg mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">
-                    Upload Excel File
-                </h3>
-                <div class="mt-2 max-w-xl text-sm text-gray-500">
-                    <p>Upload an .xlsx file with columns: Question, Options (pipe separated for MCQ), Correct Answer.
-                    </p>
+        <!-- Alerts -->
+        <div *ngIf="error" class="alert alert-error mb-6">{{ error }}</div>
+        <div *ngIf="success" class="alert alert-success mb-6">{{ success }}</div>
+
+        <!-- Excel Format Guide -->
+        <div class="glass-card mb-8 overflow-hidden">
+            <div class="p-6" style="background:rgba(238,242,255,0.3); border-bottom:1px solid #f1f5f9;">
+                <h3 class="font-bold text-dark text-base mb-3">📋 Required Excel Format</h3>
+                <div class="overflow-x-auto">
+                    <table class="data-table" style="font-size:13px;">
+                        <thead>
+                            <tr>
+                                <th>question</th>
+                                <th>type</th>
+                                <th>options</th>
+                                <th>correct_answer</th>
+                                <th>difficulty</th>
+                                <th>category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-mid">Which command...</td>
+                                <td class="text-mid">multiple_choice</td>
+                                <td class="text-mid">opt1|opt2|opt3|opt4</td>
+                                <td class="text-mid">opt1</td>
+                                <td class="text-mid">easy</td>
+                                <td class="text-mid">linux</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="mt-5 sm:flex sm:items-center">
-                    <input type="file" (change)="onFileSelected($event)" accept=".xlsx" class="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-full file:border-0
-            file:text-sm file:font-semibold
-            file:bg-indigo-50 file:text-indigo-700
-            hover:file:bg-indigo-100 mb-4 sm:mb-0" />
-                    <button (click)="uploadFile()" [disabled]="isUploading || !file"
-                        class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm disabled:opacity-50">
-                        {{ isUploading ? 'Processing...' : 'Upload & Preview' }}
+                <div class="flex gap-4 mt-3 flex-wrap">
+                    <span class="text-xs text-mid">
+                        <strong>type:</strong> multiple_choice or true_false
+                    </span>
+                    <span class="text-xs text-mid">
+                        <strong>options:</strong> pipe "|" separated
+                    </span>
+                    <span class="text-xs text-mid">
+                        <strong>difficulty:</strong> easy, medium, or hard
+                    </span>
+                    <button (click)="downloadTemplate()" class="btn btn-primary btn-sm" style="margin-left:auto;">
+                        📥 Download Sample Template
                     </button>
                 </div>
-                <p *ngIf="error" class="mt-2 text-sm text-red-600">{{ error }}</p>
-                <p *ngIf="success" class="mt-2 text-sm text-green-600">{{ success }}</p>
             </div>
         </div>
 
-        <!-- Preview Table -->
-        <div *ngIf="questions.length > 0" class="flex flex-col">
-            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Question</th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Type</th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Options</th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Correct Answer</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr *ngFor="let q of questions">
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ q.text }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ q.type }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">
-                                        <ul class="list-disc pl-5">
-                                            <li *ngFor="let opt of q.options">{{ opt }}</li>
-                                        </ul>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{{
-                                        q.correctAnswer }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+        <!-- Upload Card -->
+        <div class="glass-card mb-10 overflow-hidden">
+            <div class="p-8">
+                <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:24px;">
+                    <div style="flex:1; min-width:260px;">
+                        <h3 class="text-xl font-bold text-dark mb-2">Upload Excel File</h3>
+                        <p class="text-sm text-mid" style="max-width:500px;">
+                            Select your <code
+                                style="background:#eef2ff; color:var(--primary-dark); padding:2px 6px; border-radius:4px; font-size:12px;">.xlsx</code>
+                            file with the columns shown above.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <label class="file-upload-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            {{ file ? file.name : 'Choose File' }}
+                            <input type="file" (change)="onFileSelected($event)" accept=".xlsx" style="display:none" />
+                        </label>
+
+                        <button (click)="uploadFile()" [disabled]="isUploading || !file" class="btn btn-primary">
+                            <span *ngIf="isUploading" class="spinner spinner-sm"
+                                style="border-color:rgba(255,255,255,0.3); border-top-color:#fff;"></span>
+                            {{ isUploading ? 'Processing...' : 'Upload & Preview' }}
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="mt-4 flex justify-end">
-                <button (click)="saveQuestions()" [disabled]="isUploading"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50">
-                    Save to Database
+        </div>
+
+        <!-- Upload Preview Table -->
+        <div *ngIf="questions.length > 0" class="glass-card overflow-hidden mb-10">
+            <div class="px-6 py-4 flex-between"
+                style="border-bottom:1px solid #f1f5f9; background:rgba(248,250,252,0.5);">
+                <h3 class="font-bold text-dark">📤 Upload Preview <span class="text-sm font-medium text-mid">({{
+                        questions.length }})</span></h3>
+                <button (click)="saveQuestions()" [disabled]="isUploading" class="btn btn-success btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save {{ questions.length }} Questions
                 </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">#</th>
+                            <th>Question</th>
+                            <th>Type</th>
+                            <th>Options</th>
+                            <th>Correct Answer</th>
+                            <th>Difficulty</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let q of questions; let i = index">
+                            <td class="text-light">{{ i + 1 }}</td>
+                            <td class="font-medium">{{ q.text }}</td>
+                            <td class="text-mid">{{ q.type }}</td>
+                            <td class="text-mid">
+                                <ul style="list-style:disc; padding-left:20px;">
+                                    <li *ngFor="let opt of q.options" style="margin-bottom:2px;">{{ opt }}</li>
+                                </ul>
+                            </td>
+                            <td class="font-bold text-green">{{ q.correctAnswer }}</td>
+                            <td>
+                                <span class="badge"
+                                    [style.background]="q.difficulty === 'easy' ? '#dcfce7' : q.difficulty === 'hard' ? '#fef2f2' : '#fef3c7'"
+                                    [style.color]="q.difficulty === 'easy' ? '#166534' : q.difficulty === 'hard' ? '#991b1b' : '#92400e'">
+                                    {{ q.difficulty }}
+                                </span>
+                            </td>
+                            <td class="text-mid">{{ q.category }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Saved Questions Section -->
+        <div class="glass-card overflow-hidden">
+            <div class="px-6 py-4 flex-between"
+                style="border-bottom:1px solid #f1f5f9; background:rgba(248,250,252,0.5);">
+                <h3 class="font-bold text-dark">
+                    📚 Saved Questions
+                    <span class="text-sm font-medium text-mid">({{ savedQuestions.length }})</span>
+                </h3>
+                <div class="flex gap-2">
+                    <button *ngIf="savedQuestions.length > 0" (click)="deleteAllQuestions()"
+                        class="btn btn-danger btn-sm">
+                        🗑 Delete All
+                    </button>
+                </div>
+            </div>
+
+            <div *ngIf="savedLoading" class="flex-center py-8">
+                <div class="spinner spinner-sm"></div>
+                <span class="text-mid ml-3">Loading questions...</span>
+            </div>
+
+            <div *ngIf="!savedLoading && savedQuestions.length === 0" class="p-8 text-center">
+                <p class="text-mid">No questions saved yet. Upload an Excel file above to get started.</p>
+            </div>
+
+            <div *ngIf="!savedLoading && savedQuestions.length > 0" class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">#</th>
+                            <th>Question</th>
+                            <th>Type</th>
+                            <th>Options</th>
+                            <th>Difficulty</th>
+                            <th>Category</th>
+                            <th style="width:80px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let q of savedQuestions; let i = index">
+                            <td class="text-light">{{ i + 1 }}</td>
+                            <td class="font-medium" style="max-width:300px;">{{ q.text }}</td>
+                            <td class="text-mid">{{ q.type }}</td>
+                            <td class="text-mid text-sm">
+                                {{ q.options?.join(', ') }}
+                            </td>
+                            <td>
+                                <span class="badge"
+                                    [style.background]="q.difficulty === 'easy' ? '#dcfce7' : q.difficulty === 'hard' ? '#fef2f2' : '#fef3c7'"
+                                    [style.color]="q.difficulty === 'easy' ? '#166534' : q.difficulty === 'hard' ? '#991b1b' : '#92400e'">
+                                    {{ q.difficulty || 'medium' }}
+                                </span>
+                            </td>
+                            <td class="text-mid">{{ q.category || 'General' }}</td>
+                            <td>
+                                <button (click)="deleteQuestion(q)" class="btn btn-ghost btn-sm"
+                                    style="color:var(--red); padding:4px 8px;">
+                                    🗑
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

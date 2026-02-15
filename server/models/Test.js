@@ -16,8 +16,17 @@ const testSchema = new mongoose.Schema({
     accessCode: {
         type: String
     },
+    showResults: {
+        type: Boolean,
+        default: false
+    },
+    allowMultipleAttempts: {
+        type: Boolean,
+        default: true
+    },
     expiryDate: {
-        type: Date
+        type: Date,
+        default: null
     },
     uniqueLink: {
         type: String,
@@ -38,6 +47,10 @@ const testSchema = new mongoose.Schema({
     shuffleOptions: {
         type: Boolean,
         default: false
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     },
     createdAt: {
         type: Date,

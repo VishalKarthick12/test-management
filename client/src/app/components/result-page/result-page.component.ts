@@ -1,118 +1,104 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ApiService } from '../../services/api.service';
-import confetti from 'canvas-confetti';
-import jsPDF from 'jspdf';
+import { ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
     selector: 'app-result-page',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [CommonModule],
     templateUrl: './result-page.component.html'
 })
 export class ResultPageComponent implements OnInit {
-    attempt: any;
     loading = true;
+    result: any = null;
+    showResults = false;
     passed = false;
     percentage = 0;
 
-    constructor(private route: ActivatedRoute, private api: ApiService) { }
+    private apiUrl = environment.apiUrl;
+
+    constructor(private route: ActivatedRoute, private http: HttpClient) { }
 
     ngOnInit() {
         const attemptId = this.route.snapshot.paramMap.get('attemptId');
         if (attemptId) {
-            this.api.get(`attempts/${attemptId}`).subscribe({
-                next: (data) => {
-                    this.attempt = data;
+            this.http.get(`${this.apiUrl}/attempts/${attemptId}`).subscribe({
+                next: (data: any) => {
+                    this.result = data;
+                    this.showResults = data.showResults;
                     this.loading = false;
-                    this.calculateResult();
+
+                    if (this.showResults && data.score !== undefined) {
+                        this.percentage = Math.round((data.score / data.totalQuestions) * 100);
+                        this.passed = this.percentage >= 60;
+                    }
                 },
-                error: (err) => {
-                    console.error(err);
+                error: () => {
                     this.loading = false;
                 }
             });
         }
     }
 
-    calculateResult() {
-        this.percentage = (this.attempt.score / this.attempt.totalQuestions) * 100;
-        this.passed = this.percentage >= 60;
+    printCertificate() {
+        const r = this.result;
+        const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const timeMins = r.timeTaken ? Math.floor(r.timeTaken / 60) : 0;
+        const timeSecs = r.timeTaken ? Math.round(r.timeTaken % 60) : 0;
 
-        if (this.passed) {
-            this.triggerConfetti();
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Certificate - ${r.testTitle}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { font-family:'Outfit',sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f8fafc; }
+                .cert { width:800px; padding:60px; background:#fff; border:3px solid #6366f1; border-radius:20px; position:relative; text-align:center; }
+                .cert::before { content:''; position:absolute; inset:8px; border:1.5px solid #e0e7ff; border-radius:16px; pointer-events:none; }
+                .header { font-size:14px; text-transform:uppercase; letter-spacing:0.15em; color:#64748b; margin-bottom:8px; }
+                .title { font-size:36px; font-weight:800; background:linear-gradient(135deg,#6366f1,#a855f7,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:32px; }
+                .line { width:60px; height:3px; background:linear-gradient(90deg,#6366f1,#ec4899); margin:0 auto 32px; border-radius:4px; }
+                .name { font-size:28px; font-weight:700; color:#1e293b; margin-bottom:8px; }
+                .detail { font-size:16px; color:#64748b; margin-bottom:6px; }
+                .score-box { display:inline-block; margin:24px auto; padding:16px 40px; background:${this.passed ? '#f0fdf4' : '#fef2f2'}; border-radius:16px; border:2px solid ${this.passed ? '#bbf7d0' : '#fecaca'}; }
+                .score-val { font-size:40px; font-weight:800; color:${this.passed ? '#16a34a' : '#dc2626'}; }
+                .score-label { font-size:13px; color:#64748b; text-transform:uppercase; letter-spacing:0.1em; }
+                .status { font-size:18px; font-weight:700; color:${this.passed ? '#16a34a' : '#dc2626'}; margin-top:16px; }
+                .footer { margin-top:40px; font-size:12px; color:#94a3b8; }
+                .seal { font-size:48px; margin-top:16px; }
+                @media print { body { background:#fff; } .cert { border:3px solid #6366f1; box-shadow:none; } }
+            </style>
+        </head>
+        <body>
+            <div class="cert">
+                <p class="header">Certificate of Completion</p>
+                <h1 class="title">LTTS Test Portal</h1>
+                <div class="line"></div>
+                <p class="detail">This is to certify that</p>
+                <h2 class="name">${r.studentName}</h2>
+                <p class="detail">has completed the assessment</p>
+                <p style="font-size:20px; font-weight:700; color:#1e293b; margin:12px 0 4px;">"${r.testTitle}"</p>
+                <p class="detail">on ${date}</p>
+                <div class="score-box">
+                    <div class="score-val">${this.percentage}%</div>
+                    <div class="score-label">Score: ${r.score} / ${r.totalQuestions} • Time: ${timeMins}m ${timeSecs}s</div>
+                </div>
+                <p class="status">${this.passed ? '✓ PASSED' : '✗ NEEDS IMPROVEMENT'}</p>
+                <div class="seal">${this.passed ? '🏆' : '📋'}</div>
+                <p class="footer">Generated by LTTS Test Portal • This is a computer-generated certificate</p>
+            </div>
+            <script>window.onload = function() { window.print(); }</script>
+        </body>
+        </html>`;
+
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(html);
+            win.document.close();
         }
-    }
-
-    triggerConfetti() {
-        const duration = 3000;
-        const end = Date.now() + duration;
-
-        (function frame() {
-            confetti({
-                particleCount: 7,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 }
-            });
-            confetti({
-                particleCount: 7,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 }
-            });
-
-            if (Date.now() < end) {
-                requestAnimationFrame(frame);
-            }
-        }());
-    }
-
-    downloadCertificate() {
-        const doc = new jsPDF();
-
-        // Background (Simple border)
-        doc.setLineWidth(2);
-        doc.rect(10, 10, 190, 277);
-
-        // Header
-        doc.setFontSize(24);
-        doc.setTextColor(79, 70, 229); // Indigo
-        doc.text("LTTS Test Portal", 105, 40, { align: "center" });
-
-        // Title
-        doc.setFontSize(30);
-        doc.setTextColor(0, 0, 0);
-        doc.text("Certificate of Completion", 105, 70, { align: "center" });
-
-        // Content
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "normal");
-        doc.text("This is to certify that", 105, 100, { align: "center" });
-
-        doc.setFontSize(22);
-        doc.setFont("helvetica", "bold");
-        doc.text(this.attempt.student.name, 105, 120, { align: "center" });
-
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "normal");
-        doc.text("has successfully passed the test", 105, 140, { align: "center" });
-
-        doc.setFontSize(20);
-        doc.setFont("helvetica", "bold");
-        doc.text(this.attempt.test.title, 105, 160, { align: "center" });
-
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Score: ${this.percentage.toFixed(0)}%`, 105, 180, { align: "center" });
-
-        doc.text(`Date: ${new Date(this.attempt.endTime).toLocaleDateString()}`, 105, 200, { align: "center" });
-
-        doc.setFontSize(12);
-        doc.setTextColor(150, 150, 150);
-        doc.text("Verified by LTTS Assessment System", 105, 260, { align: "center" });
-
-        doc.save(`certificate_${this.attempt.student.name}.pdf`);
     }
 }

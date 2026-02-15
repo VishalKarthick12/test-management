@@ -1,60 +1,278 @@
-<div class="min-h-screen bg-gray-50 py-10">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-6">Create New Test</h3>
-                <form (ngSubmit)="onSubmit()">
-                    <div class="grid grid-cols-1 gap-6">
+<div class="page-wrapper py-12 px-4" style="min-height:100vh;">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container-lg relative z-10">
+
+        <!-- Success: Link Created -->
+        <div *ngIf="createdLink" class="glass-card p-10 text-center">
+            <div style="color:var(--green); margin-bottom:16px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" style="margin:0 auto;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h2 class="text-3xl font-bold text-dark mb-2">Test Created Successfully!</h2>
+            <p class="text-mid mb-8">Share this link with your students:</p>
+
+            <div class="glass-input"
+                style="display:flex; align-items:center; justify-content:space-between; gap:12px; max-width:600px; margin:0 auto; font-size:14px;">
+                <span class="mono truncate" style="flex:1;">{{ createdLink }}</span>
+                <button (click)="copyLink()" class="btn btn-primary btn-sm" style="flex-shrink:0;">Copy</button>
+            </div>
+
+            <button (click)="goToDashboard()" class="btn btn-ghost mt-8">← Back to Dashboard</button>
+        </div>
+
+        <!-- Create Test Form -->
+        <div *ngIf="!createdLink" class="glass-card overflow-hidden">
+            <div class="p-10">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold gradient-text">Create New Assessment</h2>
+                    <p class="text-mid mt-2">Configure the test, set difficulty distribution, and select questions.</p>
+                </div>
+
+                <form (ngSubmit)="onSubmit()" style="display:flex; flex-direction:column; gap:28px;">
+
+                    <!-- Basic Info -->
+                    <div>
+                        <label class="text-sm font-semibold text-dark" style="display:block; margin-bottom:8px;">Test
+                            Title</label>
+                        <input [(ngModel)]="test.title" name="title" type="text" required class="glass-input"
+                            placeholder="e.g. Docker Fundamentals Quiz" />
+                    </div>
+
+                    <div class="grid grid-2 gap-8">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Test Title</label>
-                            <input [(ngModel)]="test.title" name="title" type="text" required
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+                            <label class="text-sm font-semibold text-dark"
+                                style="display:block; margin-bottom:8px;">Duration (minutes)</label>
+                            <input [(ngModel)]="test.duration" name="duration" type="number" required min="1"
+                                class="glass-input" />
                         </div>
-
-                        <div class="grid grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Duration (minutes)</label>
-                                <input [(ngModel)]="test.duration" name="duration" type="number" required
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Total Questions</label>
-                                <input [(ngModel)]="test.totalQuestions" name="totalQuestions" type="number" required
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
-                            </div>
-                        </div>
-
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Access Code (Optional)</label>
-                            <input [(ngModel)]="test.accessCode" name="accessCode" type="text"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+                            <label class="text-sm font-semibold text-dark"
+                                style="display:block; margin-bottom:8px;">Number of Questions</label>
+                            <input [(ngModel)]="test.totalQuestions" name="totalQuestions" type="number" required
+                                min="1" [max]="availableQuestions.length" class="glass-input" />
+                        </div>
+                    </div>
+
+                    <!-- Access Code Toggle -->
+                    <div style="background:rgba(248,250,252,0.6); border-radius:var(--radius-md); padding:18px;">
+                        <label class="checkbox-wrap mb-2">
+                            <input [(ngModel)]="test.useAccessCode" name="useAccessCode" type="checkbox" />
+                            <span class="text-sm font-bold text-dark">🔒 Require Access Code</span>
+                        </label>
+                        <div *ngIf="test.useAccessCode" style="margin-top:12px;">
+                            <input [(ngModel)]="test.accessCode" name="accessCode" type="text" class="glass-input"
+                                placeholder="Enter a code students must provide (e.g. DOCKER2026)" required />
+                        </div>
+                    </div>
+
+                    <!-- Options Toggle -->
+                    <div style="display:flex; flex-direction:column; gap:14px; padding-top:4px;">
+                        <label class="checkbox-wrap">
+                            <input [(ngModel)]="test.shuffleQuestions" name="shuffleQuestions" type="checkbox" />
+                            <span class="text-sm font-medium text-dark">Shuffle Questions</span>
+                        </label>
+                        <label class="checkbox-wrap">
+                            <input [(ngModel)]="test.shuffleOptions" name="shuffleOptions" type="checkbox" />
+                            <span class="text-sm font-medium text-dark">Shuffle Options</span>
+                        </label>
+                        <label class="checkbox-wrap">
+                            <input [(ngModel)]="test.showResults" name="showResults" type="checkbox" />
+                            <span class="text-sm font-medium text-dark">Allow students to see their results after
+                                submission</span>
+                        </label>
+                    </div>
+
+                    <!-- Single Attempt & Expiry Section -->
+                    <div
+                        style="background:rgba(248,250,252,0.6); border-radius:var(--radius-md); padding:18px; display:flex; flex-direction:column; gap:16px;">
+                        <label class="checkbox-wrap">
+                            <input [(ngModel)]="test.allowMultipleAttempts" name="allowMultipleAttempts"
+                                type="checkbox" />
+                            <span class="text-sm font-bold text-dark">🔄 Allow Multiple Attempts</span>
+                        </label>
+                        <p *ngIf="!test.allowMultipleAttempts" class="text-xs text-mid"
+                            style="margin-left:28px; margin-top:-8px;">
+                            Each student email can only take this test once. Duplicate attempts will be blocked.
+                        </p>
+
+                        <label class="checkbox-wrap">
+                            <input [(ngModel)]="test.useExpiry" name="useExpiry" type="checkbox" />
+                            <span class="text-sm font-bold text-dark">⏰ Set Expiry Date</span>
+                        </label>
+                        <div *ngIf="test.useExpiry" style="margin-left:28px;">
+                            <input [(ngModel)]="test.expiryDate" name="expiryDate" type="datetime-local"
+                                class="glass-input" style="max-width:320px;" />
+                            <p class="text-xs text-mid mt-2">Students won't be able to access the test after this date.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Difficulty Distribution -->
+                    <div style="background:rgba(248,250,252,0.6); border-radius:var(--radius-md); padding:24px;">
+                        <div class="flex-between mb-4">
+                            <h3 class="font-bold text-dark text-base">📊 Difficulty Distribution</h3>
+                            <div class="flex gap-2">
+                                <button type="button" (click)="difficultyMode = 'auto'" class="btn btn-sm"
+                                    [ngClass]="difficultyMode === 'auto' ? 'btn-primary' : 'btn-ghost'">
+                                    Auto Select
+                                </button>
+                                <button type="button" (click)="difficultyMode = 'manual'" class="btn btn-sm"
+                                    [ngClass]="difficultyMode === 'manual' ? 'btn-primary' : 'btn-ghost'">
+                                    Manual Pick
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="flex items-start">
-                            <div class="flex items-center h-5">
-                                <input [(ngModel)]="test.shuffleQuestions" name="shuffleQuestions" type="checkbox"
-                                    class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        <!-- Question Bank Stats -->
+                        <div class="flex gap-4 mb-6 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    style="width:10px; height:10px; border-radius:50%; background:#22c55e; display:inline-block;"></span>
+                                <span class="text-sm text-mid">Easy: <strong class="text-dark">{{ easyCount
+                                        }}</strong></span>
                             </div>
-                            <div class="ml-3 text-sm">
-                                <label class="font-medium text-gray-700">Shuffle Questions</label>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    style="width:10px; height:10px; border-radius:50%; background:#f59e0b; display:inline-block;"></span>
+                                <span class="text-sm text-mid">Medium: <strong class="text-dark">{{ mediumCount
+                                        }}</strong></span>
                             </div>
-                        </div>
-                        <div class="flex items-start">
-                            <div class="flex items-center h-5">
-                                <input [(ngModel)]="test.shuffleOptions" name="shuffleOptions" type="checkbox"
-                                    class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    style="width:10px; height:10px; border-radius:50%; background:#ef4444; display:inline-block;"></span>
+                                <span class="text-sm text-mid">Hard: <strong class="text-dark">{{ hardCount
+                                        }}</strong></span>
                             </div>
-                            <div class="ml-3 text-sm">
-                                <label class="font-medium text-gray-700">Shuffle Options</label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-mid">Total: <strong class="text-dark">{{
+                                        availableQuestions.length }}</strong></span>
                             </div>
                         </div>
 
-                        <div class="pt-5">
-                            <button type="submit" [disabled]="isLoading"
-                                class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
-                                {{ isLoading ? 'Creating...' : 'Create Test' }}
+                        <!-- Auto Mode: Percentage Sliders -->
+                        <div *ngIf="difficultyMode === 'auto'">
+
+                            <!-- Category Filter -->
+                            <div class="mb-6">
+                                <label class="text-xs font-semibold text-mid uppercase tracking-wider"
+                                    style="display:block; margin-bottom:6px;">Filter by Category</label>
+                                <select [(ngModel)]="selectedCategory" name="category" class="glass-input"
+                                    (ngModelChange)="filterByCategory()">
+                                    <option value="">All Categories</option>
+                                    <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-3 gap-6 mb-6">
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider"
+                                        style="color:#22c55e; display:block; margin-bottom:6px;">
+                                        Easy %</label>
+                                    <input [(ngModel)]="easyPercent" name="easyPercent" type="number" min="0" max="100"
+                                        class="glass-input text-center font-bold" style="font-size:18px;"
+                                        (ngModelChange)="adjustPercent('easy')" />
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider"
+                                        style="color:#f59e0b; display:block; margin-bottom:6px;">
+                                        Medium %</label>
+                                    <input [(ngModel)]="mediumPercent" name="mediumPercent" type="number" min="0"
+                                        max="100" class="glass-input text-center font-bold" style="font-size:18px;"
+                                        (ngModelChange)="adjustPercent('medium')" />
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider"
+                                        style="color:#ef4444; display:block; margin-bottom:6px;">
+                                        Hard %</label>
+                                    <input [(ngModel)]="hardPercent" name="hardPercent" type="number" min="0" max="100"
+                                        class="glass-input text-center font-bold" style="font-size:18px;"
+                                        (ngModelChange)="adjustPercent('hard')" />
+                                </div>
+                            </div>
+
+                            <div *ngIf="totalPercent !== 100" class="alert alert-error mb-4">
+                                ⚠️ Percentages must add up to 100% (currently {{ totalPercent }}%)
+                            </div>
+
+                            <button type="button" (click)="autoSelectQuestions()"
+                                [disabled]="totalPercent !== 100 || test.totalQuestions < 1"
+                                class="btn btn-secondary btn-full">
+                                🎲 Auto-Select {{ test.totalQuestions }} Questions by Difficulty
                             </button>
+
+                            <p *ngIf="test.selectedQuestions.length > 0"
+                                class="text-center text-sm text-green font-semibold mt-4">
+                                ✅ {{ test.selectedQuestions.length }} questions selected
+                            </p>
                         </div>
+                    </div>
+
+                    <!-- Manual Question Selection (shown in manual mode OR after auto-select for review) -->
+                    <div *ngIf="difficultyMode === 'manual'">
+                        <div class="flex-between mb-4">
+                            <label class="text-sm font-semibold text-dark">
+                                Select Questions Manually
+                                <span class="text-mid font-medium">({{ test.selectedQuestions.length }} selected)</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <select [(ngModel)]="selectedCategory" name="manualCategory" class="glass-input"
+                                    (ngModelChange)="filterByCategory()"
+                                    style="width:auto; padding:6px 12px; font-size:13px;">
+                                    <option value="">All Categories</option>
+                                    <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+                                </select>
+                                <button type="button" (click)="selectAll()" class="btn btn-ghost btn-sm">Select
+                                    All</button>
+                                <button type="button" (click)="deselectAll()" class="btn btn-ghost btn-sm">Deselect
+                                    All</button>
+                            </div>
+                        </div>
+
+                        <div *ngIf="questionsLoading" class="flex-center py-8">
+                            <div class="spinner spinner-sm"></div>
+                            <span class="text-mid ml-3">Loading questions...</span>
+                        </div>
+
+                        <div *ngIf="!questionsLoading && filteredQuestions.length === 0"
+                            class="glass-input text-center text-mid" style="padding:24px;">
+                            No questions found. <a routerLink="/admin/question-bank"
+                                style="color:var(--primary); text-decoration:underline;">Upload some first</a>.
+                        </div>
+
+                        <div *ngIf="!questionsLoading && filteredQuestions.length > 0"
+                            style="max-height:400px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:var(--radius-md);">
+                            <div *ngFor="let q of filteredQuestions; let i = index" (click)="toggleQuestion(q._id)"
+                                style="padding:14px 18px; border-bottom:1px solid #f1f5f9; cursor:pointer; display:flex; align-items:flex-start; gap:12px; transition: background 0.2s;"
+                                [style.background]="isSelected(q._id) ? 'rgba(238,242,255,0.6)' : 'transparent'">
+                                <input type="checkbox" [checked]="isSelected(q._id)"
+                                    style="margin-top:3px; accent-color:var(--primary);pointer-events:none;" />
+                                <div style="flex:1;">
+                                    <span class="font-medium text-dark text-sm">{{ q.text }}</span>
+                                    <div class="flex gap-2 mt-1">
+                                        <span class="badge badge-primary">{{ q.type }}</span>
+                                        <span class="badge" [style.background]="getDifficultyColor(q.difficulty) + '20'"
+                                            [style.color]="getDifficultyColor(q.difficulty)" style="font-size:11px;">
+                                            {{ q.difficulty }}
+                                        </span>
+                                        <span class="text-xs text-light">{{ q.category }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding-top:12px;">
+                        <button type="submit" [disabled]="isLoading || test.selectedQuestions.length === 0"
+                            class="btn btn-primary btn-full btn-lg">
+                            <span *ngIf="isLoading" class="spinner spinner-sm"
+                                style="border-color:rgba(255,255,255,0.3); border-top-color:#fff;"></span>
+                            {{ isLoading ? 'Creating...' : 'Create Test & Generate Link' }}
+                        </button>
                     </div>
                 </form>
             </div>

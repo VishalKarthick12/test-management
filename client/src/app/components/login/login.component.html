@@ -1,67 +1,54 @@
-<div class="min-h-screen flex items-center justify-center bg-gray-50 bg-gradient-to-br from-indigo-50 to-cyan-50">
-  <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg transform transition-all hover:scale-[1.01]">
-    <div class="text-center">
-      <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-        LTTS Test Portal
-      </h2>
-      <p class="mt-2 text-sm text-gray-600">
-        Sign in to your account
-      </p>
-    </div>
-    
-    <div *ngIf="error" class="bg-red-50 border-l-4 border-red-500 p-4 mb-4" role="alert">
-      <p class="text-red-700">{{ error }}</p>
+<div class="page-wrapper flex-center" style="min-height: 100vh; padding: 24px;">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="glass-card container-sm p-10 z-10 relative">
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-extrabold gradient-text mb-2">LTTS Portal</h1>
+      <p class="text-mid font-medium tracking-wide">Admin Login</p>
     </div>
 
-    <form class="mt-8 space-y-6" (ngSubmit)="onSubmit()">
-      <div class="rounded-md shadow-sm -space-y-px">
-        <div>
-          <label for="email-address" class="sr-only">Email address</label>
-          <input
-            id="email-address"
-            name="email"
-            type="email"
-            autocomplete="email"
-            required
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-            placeholder="Email address"
-            [(ngModel)]="email"
-            (ngModelChange)="validateEmail()"
-          />
-        </div>
-        <div>
-          <label for="password" class="sr-only">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            required
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-            placeholder="Password"
-            [(ngModel)]="password"
-          />
-        </div>
+    <div *ngIf="error" class="alert alert-error mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd"
+          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+          clip-rule="evenodd" />
+      </svg>
+      <span class="font-semibold">{{ error }}</span>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" style="display: flex; flex-direction: column; gap: 20px;">
+      <div>
+        <label class="text-sm font-semibold text-mid"
+          style="display:block; margin-bottom:6px; margin-left:2px;">Email</label>
+        <input name="email" type="email" autocomplete="email" required class="glass-input" placeholder="admin@ltts.com"
+          [(ngModel)]="email" />
+      </div>
+      <div>
+        <label class="text-sm font-semibold text-mid"
+          style="display:block; margin-bottom:6px; margin-left:2px;">Password</label>
+        <input name="password" type="password" autocomplete="current-password" required class="glass-input"
+          placeholder="••••••••" [(ngModel)]="password" />
       </div>
 
-      <div>
-        <button
-          type="submit"
-          [disabled]="isLoading"
-          class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors duration-200"
-        >
-          <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-            <svg *ngIf="!isLoading" class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-            </svg>
-            <svg *ngIf="isLoading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <div style="padding-top: 8px;">
+        <button type="submit" [disabled]="isLoading" class="btn btn-primary btn-full btn-lg">
+          <span *ngIf="!isLoading" class="flex items-center gap-2">
+            Sign In
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </span>
-          Sign in
+          <span *ngIf="isLoading" class="flex items-center gap-2">
+            <span class="spinner spinner-sm"></span> Signing in...
+          </span>
         </button>
       </div>
     </form>
+
+    <div class="text-center mt-8">
+      <p class="text-xs text-light">Restricted to authorized administrators only.</p>
+    </div>
   </div>
 </div>

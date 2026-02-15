@@ -11,15 +11,15 @@ const importData = async () => {
         await User.deleteMany();
 
         const adminUser = new User({
-            name: 'Admin User',
+            name: 'Admin',
             email: 'admin@ltts.com',
-            password: 'password123',
+            password: 'admin123',
             role: 'admin'
         });
 
         await adminUser.save();
 
-        console.log('Data Imported!');
+        console.log('Admin seeded: admin@ltts.com / admin123');
         process.exit();
     } catch (error) {
         console.error(`${error}`);

@@ -10,7 +10,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || '*', // Allow all in dev, restrict in prod
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -18,16 +21,25 @@ app.use(express.urlencoded({ extended: true }));
 const connectDB = require('./config/db');
 connectDB();
 
-// Routes Placeholder
-app.get('/', (req, res) => {
-    res.send('LTTS Test Portal API is running!');
-});
-
-// Define Routes
+// Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tests', require('./routes/testRoutes'));
 app.use('/api/attempts', require('./routes/attemptRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+
+// Serve static assets in production (optional monolith mode)
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../client/dist/client/browser')));
+
+    app.get('*', (req, res) => {
+        // Build path depends on angular.json output
+        res.sendFile(path.resolve(__dirname, '../client/dist/client/browser/index.html'));
+    });
+} else {
+    app.get('/', (req, res) => {
+        res.send('LTTS Test Portal API is running!');
+    });
+}
 
 // Error Config
 app.listen(PORT, () => {
