@@ -1,0 +1,46 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <header class="bg-indigo-600 dark:bg-indigo-800 shadow-md">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-white">
+                Welcome, {{ user?.name }}
+            </h1>
+            <button (click)="logout()"
+                class="text-white hover:text-indigo-200 font-medium transition-colors">Logout</button>
+        </div>
+    </header>
+    <main>
+        <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
+            <!-- Test Entry Card -->
+            <div
+                class="max-w-xl mx-auto bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transform transition-all hover:scale-[1.01]">
+                <div class="px-6 py-8">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white text-center mb-6">Enter Test Link ID
+                    </h3>
+                    <div class="flex gap-4">
+                        <input type="text" [(ngModel)]="testLinkInput" placeholder="e.g. abc12345"
+                            class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border">
+                        <button (click)="goToTest()" [disabled]="!testLinkInput"
+                            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:opacity-50 transition-colors">
+                            Go
+                        </button>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                        Paste the unique ID from your test link here (e.g. from /test/<b>abc12345</b>)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Placeholder for History -->
+            <div class="mt-12">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Past Attempts</h3>
+                <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+                    <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <li class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            No past attempts found.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

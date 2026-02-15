@@ -1,0 +1,94 @@
+<div class="min-h-screen bg-gray-50">
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-indigo-600">LTTS Admin</h1>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <button class="ml-4 px-4 py-2 text-sm text-red-600 hover:text-red-800">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="py-10">
+        <header>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-3xl font-bold leading-tight text-gray-900">Dashboard</h1>
+                <div class="flex space-x-3">
+                    <a routerLink="/admin/create-test"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                        Create Test
+                    </a>
+                    <a routerLink="/admin/question-bank"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                        Question Bank
+                    </a>
+                </div>
+            </div>
+        </header>
+        <main>
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-8">
+                <!-- Stats -->
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Tests</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.totalTests }}</dd>
+                        </div>
+                    </div>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <dt class="text-sm font-medium text-gray-500 truncate">Students Attempted</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.totalStudents }}</dd>
+                        </div>
+                    </div>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <dt class="text-sm font-medium text-gray-500 truncate">Average Score</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.avgScore }}</dd>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Attempts</h3>
+                    </div>
+                    <ul role="list" class="divide-y divide-gray-200">
+                        <li *ngFor="let attempt of stats.recentAttempts" class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm font-medium text-indigo-600 truncate">{{ attempt.student.name }}</p>
+                                <div class="ml-2 flex-shrink-0 flex">
+                                    <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                        [ngClass]="attempt.score >= (attempt.totalQuestions * 0.6) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                                        {{ attempt.score }} / {{ attempt.totalQuestions }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-2 sm:flex sm:justify-between">
+                                <div class="sm:flex">
+                                    <p class="flex items-center text-sm text-gray-500">
+                                        {{ attempt.test.title }}
+                                    </p>
+                                </div>
+                                <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                    <p>
+                                        {{ attempt.endTime | date:'medium' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                        <li *ngIf="stats.recentAttempts.length === 0"
+                            class="px-4 py-4 sm:px-6 text-gray-500 text-center">
+                            No recent attempts found.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>

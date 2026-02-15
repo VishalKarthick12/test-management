@@ -1,0 +1,84 @@
+<div class="min-h-screen bg-gray-50 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="md:flex md:items-center md:justify-between mb-8">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    Question Bank Upload
+                </h2>
+            </div>
+        </div>
+
+        <div class="bg-white shadow sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Upload Excel File
+                </h3>
+                <div class="mt-2 max-w-xl text-sm text-gray-500">
+                    <p>Upload an .xlsx file with columns: Question, Options (pipe separated for MCQ), Correct Answer.
+                    </p>
+                </div>
+                <div class="mt-5 sm:flex sm:items-center">
+                    <input type="file" (change)="onFileSelected($event)" accept=".xlsx" class="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-full file:border-0
+            file:text-sm file:font-semibold
+            file:bg-indigo-50 file:text-indigo-700
+            hover:file:bg-indigo-100 mb-4 sm:mb-0" />
+                    <button (click)="uploadFile()" [disabled]="isUploading || !file"
+                        class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm disabled:opacity-50">
+                        {{ isUploading ? 'Processing...' : 'Upload & Preview' }}
+                    </button>
+                </div>
+                <p *ngIf="error" class="mt-2 text-sm text-red-600">{{ error }}</p>
+                <p *ngIf="success" class="mt-2 text-sm text-green-600">{{ success }}</p>
+            </div>
+        </div>
+
+        <!-- Preview Table -->
+        <div *ngIf="questions.length > 0" class="flex flex-col">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Question</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Type</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Options</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Correct Answer</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr *ngFor="let q of questions">
+                                    <td class="px-6 py-4 text-sm text-gray-900">{{ q.text }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ q.type }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">
+                                        <ul class="list-disc pl-5">
+                                            <li *ngFor="let opt of q.options">{{ opt }}</li>
+                                        </ul>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{{
+                                        q.correctAnswer }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button (click)="saveQuestions()" [disabled]="isUploading"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50">
+                    Save to Database
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
