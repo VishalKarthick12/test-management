@@ -19,7 +19,7 @@
             "destination": "https://ltts-test-management-backend.onrender.com/api/$1"
         },
         {
-            "source": "/(.*)",
+            "source": "/((?!api|.*\\..*).*)",
             "destination": "/index.html"
         }
     ]
