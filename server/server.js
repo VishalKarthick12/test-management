@@ -21,6 +21,11 @@ app.use(express.urlencoded({ extended: true }));
 const connectDB = require('./config/db');
 connectDB();
 
+// Health Check
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tests', require('./routes/testRoutes'));
