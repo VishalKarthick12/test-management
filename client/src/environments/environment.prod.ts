@@ -1,4 +1,4 @@
 export const environment = {
     production: true,
-    apiUrl: '/api'
+    apiUrl: 'https://ltts-test-management-backend.onrender.com/api'
 };
