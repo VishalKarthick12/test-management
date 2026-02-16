@@ -6,8 +6,8 @@
         "install-all": "npm install && cd client && npm install && cd ../server && npm install",
         "dev": "concurrently \"npm run server\" \"npm run client\"",
         "server": "cd server && npm run dev",
-        "client": "cd client && ng serve --port 4200",
-        "build": "cd client && ng build",
+        "client": "npm run start --prefix client",
+        "build": "npm run build --prefix client",
         "start": "node server/server.js"
     },
     "dependencies": {
