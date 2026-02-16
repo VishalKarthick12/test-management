@@ -36,7 +36,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/dist/client/browser')));
 
-    app.get('*', (req, res) => {
+    app.get(/(.*)/, (req, res) => {
         // Build path depends on angular.json output
         res.sendFile(path.resolve(__dirname, '../client/dist/client/browser/index.html'));
     });
